@@ -1,6 +1,9 @@
-import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { FORBIDDEN_MESSAGE } from '@nestjs/core/guards';
+import { JwtService } from '@nestjs/jwt';
 
 import * as bcrypt from 'bcrypt';
+import { NotFoundError } from 'rxjs';
 import { PrismaService } from 'src/prisma.service';
 
 
@@ -15,7 +18,7 @@ export type RegisterUserDTO = {
 
 export class AuthService {
 
-    constructor (private prisma:PrismaService){}
+    constructor (private prisma:PrismaService  ,private jwtService: JwtService){}
      
   async  registerUser( payload:RegisterUserDTO){
 
@@ -36,11 +39,50 @@ export class AuthService {
         throw new BadRequestException("name email and password is required!")
      }
 
-    const result=await this.prisma.user.create({data:payload})
+    const result=await this.prisma.user.create({data:payload,select:{email:true,id:true,name:true,role:true,createdAt:true,isActive:true,updatedAt:true}})
+
+        return {
+            "success":true,
+            "message":"User success fully created",
+            "data":result
+        }
+    }
+
+    async LogingUser(payload:{email:string,password:string}) {
 
 
-        return result
+        const isextisUser=await this.prisma.user.findFirst({where:{email:payload.email}})
+
+
+        if (!isextisUser){
+
+       throw new UnauthorizedException('Invalid email or password');
+        }
+
+
+        console.log(isextisUser)
+
+        const comperPassword=await bcrypt.compare(isextisUser.password,payload.password)
+
+  if (!comperPassword){
+
+     throw new UnauthorizedException('Invalid email or password');
+    }
+
+
+   const payloads ={ email:isextisUser.email,name:isextisUser.name,role:isextisUser.role}
+
+
+
+  const accessToken= await  this.jwtService.sign(payloads)
+
+  return accessToken
+
+ 
     }
 
     
 }
+
+
+
