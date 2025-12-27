@@ -7,6 +7,7 @@ import { NotFoundError } from 'rxjs';
 import { PrismaService } from 'src/prisma.service';
 
 
+
 export type RegisterUserDTO = {
   name: string;
   email: string;
@@ -18,7 +19,7 @@ export type RegisterUserDTO = {
 
 export class AuthService {
 
-    constructor (private prisma:PrismaService  ,private jwtService: JwtService){}
+    constructor (private prisma:PrismaService ,private jwtService: JwtService){}
      
   async  registerUser( payload:RegisterUserDTO){
 
@@ -62,7 +63,7 @@ export class AuthService {
 
         console.log(isextisUser)
 
-        const comperPassword=await bcrypt.compare(isextisUser.password,payload.password)
+        const comperPassword=await bcrypt.compare(payload.password,isextisUser.password)
 
   if (!comperPassword){
 
